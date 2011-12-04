@@ -58,6 +58,7 @@ MainWindow::~MainWindow()
 void MainWindow::on_pushButton_clicked()
 {
 
+    //Create a Table Model
     QString q_filter = QString("");
     QList<QString> rows;
     QSqlTableModel *model = new QSqlTableModel;
@@ -71,25 +72,15 @@ void MainWindow::on_pushButton_clicked()
         QRegExp rx("(^\\d+)");
         rx.indexIn(row_id);
         row_id = rx.cap(1);
+
+        //Build the filter for the Table Model
         if(i > 0)
             q_filter = q_filter + " or ";
         q_filter = QString(q_filter + "parentTableFK = " + row_id);
-        //rows.append(row_id);
-        //query_text = "SELECT * FROM important WHERE important.parentTableFK = ?";
 
-        //QSqlQuery qry;
-        //qry.prepare(query_text);
-        //qry.addBindValue(row_id);
-        //qry.exec();
-        //qry.next();
-
-        //QSqlRecord q = qry.record();
-        //model->insertRecord(-1,q);
-        //qDebug() << model->record(0).value(1).toString() << " " << q.value(1).toString() << " " << q.value(2).toString();
-        //model->setData(model->index(0,0), "What");
     }
 
-    qDebug() << q_filter;
+    //Run the query, populate the table
     model->setFilter(q_filter);
     model -> select();
 
@@ -105,6 +96,7 @@ void MainWindow::on_pushButton_2_clicked()
     ui->listWidget->clear();
     qDebug() << search;
 
+    //Query for the search term
     QSqlQuery qry;
     qry.prepare("SELECT * FROM parentTable WHERE ID LIKE ? OR uploaderName LIKE ? OR projectName LIKE ? OR revisionDate LIKE ? ");
     qry.addBindValue("%" + search + "%");
