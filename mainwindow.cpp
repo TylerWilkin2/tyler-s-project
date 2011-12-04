@@ -9,6 +9,7 @@
 #include <QSqlTableModel>
 #include <QFileDialog>
 #include <QSqlRecord>
+#include <QSqlField>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -52,13 +53,17 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
+
 //Compare button
 void MainWindow::on_pushButton_clicked()
 {
 
-    QString query_text;
+    QString q_filter = QString("");
     QList<QString> rows;
     QSqlTableModel *model = new QSqlTableModel;
+    model->setTable("important");
+    model->setEditStrategy(QSqlTableModel::OnManualSubmit);
+
     for(int i = 0; i < ui->listWidget_2->count(); i++)
     {
         //Use a regex to extract the ID from the row
@@ -66,19 +71,30 @@ void MainWindow::on_pushButton_clicked()
         QRegExp rx("(^\\d+)");
         rx.indexIn(row_id);
         row_id = rx.cap(1);
-        rows.append(row_id);
-        query_text = "SELECT * FROM important WHERE important.parentTableFK = ?";
+        if(i > 0)
+            q_filter = q_filter + " or ";
+        q_filter = QString(q_filter + "parentTableFK = " + row_id);
+        //rows.append(row_id);
+        //query_text = "SELECT * FROM important WHERE important.parentTableFK = ?";
 
-        QSqlQuery qry;
-        qry.prepare(query_text);
-        qry.addBindValue(row_id);
-        qry.exec();
-        model->insertRecord(-1,qry.record());
+        //QSqlQuery qry;
+        //qry.prepare(query_text);
+        //qry.addBindValue(row_id);
+        //qry.exec();
+        //qry.next();
+
+        //QSqlRecord q = qry.record();
+        //model->insertRecord(-1,q);
+        //qDebug() << model->record(0).value(1).toString() << " " << q.value(1).toString() << " " << q.value(2).toString();
+        //model->setData(model->index(0,0), "What");
     }
 
-
+    qDebug() << q_filter;
+    model->setFilter(q_filter);
+    model -> select();
 
     this->ui->tableView->setModel(model);
+    this->ui->tableView->show();
 }
 
 //Search button

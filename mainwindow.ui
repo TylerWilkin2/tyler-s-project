@@ -90,16 +90,6 @@
      <string>Remove File From Comparison</string>
     </property>
    </widget>
-   <widget class="QTableView" name="tableView">
-    <property name="geometry">
-     <rect>
-      <x>10</x>
-      <y>320</y>
-      <width>981</width>
-      <height>361</height>
-     </rect>
-    </property>
-   </widget>
    <widget class="QPushButton" name="pushButton_4">
     <property name="geometry">
      <rect>
@@ -113,15 +103,16 @@
      <string>Add File To Comparison</string>
     </property>
    </widget>
-   <zorder>listWidget</zorder>
-   <zorder>listWidget_2</zorder>
-   <zorder>pushButton</zorder>
-   <zorder>pushButton_2</zorder>
-   <zorder>lineEdit</zorder>
-   <zorder>pushButton_3</zorder>
-   <zorder>tableView</zorder>
-   <zorder>tableView</zorder>
-   <zorder>pushButton_4</zorder>
+   <widget class="QTableView" name="tableView">
+    <property name="geometry">
+     <rect>
+      <x>220</x>
+      <y>330</y>
+      <width>371</width>
+      <height>192</height>
+     </rect>
+    </property>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menuBar">
    <property name="geometry">
