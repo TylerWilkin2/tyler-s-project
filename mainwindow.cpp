@@ -6,7 +6,9 @@
 #include <QStringBuilder>
 #include <QMessageBox>
 #include <QDebug>
-#include <QSqlQueryModel>
+#include <QSqlTableModel>
+#include <QFileDialog>
+#include <QSqlRecord>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -14,21 +16,26 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
     QSqlDatabase db = QSqlDatabase::addDatabase( "QODBC" );
-    db.setDatabaseName("DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};DSN='';DBQ=C:/Users\\DefaultGen\\TylersProject-build-desktop-Qt_4_7_4_for_Desktop_-_MinGW_4_4__Qt_SDK__Debug\\debug\\windselect.accdb");
+
+
+    //Dialog to open the .accdb
+    QString fileName = QFileDialog::getOpenFileName(
+            this,
+            "Open the WindSELECT Access database",
+            "",
+            tr("WindSELECT database (*.accdb)")
+    );
+
+
+    db.setDatabaseName("DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};DSN='';DBQ=" + fileName);
     if(db.open()==false){
         QMessageBox::critical(0,"Nope","Your file isn't where I thought it would be.");
     }
 
 
-
-    QStringList list = db.tables(QSql::Tables);
-    for(int i=0;i<list.size(); ++i)
-    {
-        qDebug() << "Table names " << list.at(i);
-    }
-
+    //Populate the left hand list box with all of the files in the Access database
     QSqlQuery qryTableNames;
-    qryTableNames.exec("select * from parentTable");
+    qryTableNames.exec("select * from parentTable"); //Parent table contains all unique IDs
     while ( qryTableNames.next() ){
         QString id(qryTableNames.value(0).toString());
         QString name(qryTableNames.value(1).toString());
@@ -36,10 +43,8 @@ MainWindow::MainWindow(QWidget *parent) :
         QString rev_no(qryTableNames.value(3).toString());
         QString rev_date(qryTableNames.value(4).toString());
         ui->listWidget->addItem(id % ". " % proj_name % " - Rev. " % rev_no % " - "  % name % " - " % rev_date.left(10));
-        ui->listWidget_2->addItem(id % ". " % proj_name % " - Rev. " % rev_no % " - "  % name % " - " % rev_date.left(10));
     }
 
-    // SELECT * FROM siteinfoMain WHERE siteInfoMain.parentTablefk =
 }
 
 MainWindow::~MainWindow()
@@ -47,35 +52,36 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
+//Compare button
 void MainWindow::on_pushButton_clicked()
 {
 
-    QSqlQuery qrySheet1;
-    QSqlQuery qrySheet2;
-    qrySheet1.prepare("SELECT * FROM SiteInfoMain as foo WHERE foo.parentTableFK = ? UNION SELECT * FROM SiteInfoMain as foo WHERE foo.parentTableFK = ?");
-    qrySheet2.prepare("SELECT * FROM SiteInfoMain as foo WHERE foo.parentTableFK = ? UNION SELECT * FROM SiteInfoMain as foo WHERE foo.parentTableFK = ?");
+    QString query_text;
+    QList<QString> rows;
+    QSqlTableModel *model = new QSqlTableModel;
+    for(int i = 0; i < ui->listWidget_2->count(); i++)
+    {
+        //Use a regex to extract the ID from the row
+        QString row_id = ui->listWidget_2->item(i)->text();
+        QRegExp rx("(^\\d+)");
+        rx.indexIn(row_id);
+        row_id = rx.cap(1);
+        rows.append(row_id);
+        query_text = "SELECT * FROM important WHERE important.parentTableFK = ?";
 
-    QString n1 = ui->listWidget->currentItem()->text();
-    QString n2 = ui->listWidget_2->currentItem()->text();
-    QStringList list1;
-    QStringList list2;
-    list1 = n1.split(QRegExp("\ "));
-    list2 = n2.split(QRegExp("\ "));
+        QSqlQuery qry;
+        qry.prepare(query_text);
+        qry.addBindValue(row_id);
+        qry.exec();
+        model->insertRecord(-1,qry.record());
+    }
 
 
-    qrySheet.addBindValue(ui->listWidget->currentItem()->text());
-    qrySheet.addBindValue(ui->listWidget_2->currentItem()->text());
-
-
-
-    qrySheet.exec();
-    QSqlQueryModel *model = new QSqlQueryModel;
-    model->setQuery(qrySheet);
 
     this->ui->tableView->setModel(model);
-
 }
 
+//Search button
 void MainWindow::on_pushButton_2_clicked()
 {
     QString search = ui->lineEdit->text();
@@ -103,27 +109,33 @@ void MainWindow::on_pushButton_2_clicked()
 
 }
 
+//Remove item button
 void MainWindow::on_pushButton_3_clicked()
 {
-    QString search = ui->lineEdit_2->text();
+    qDeleteAll(ui->listWidget_2->selectedItems());
 
-    ui->listWidget_2->clear();
-    qDebug() << search;
+}
 
-    QSqlQuery qry;
-    qry.prepare("SELECT * FROM parentTable WHERE ID LIKE ? OR uploaderName LIKE ? OR projectName LIKE ? OR revisionDate LIKE ? ");
-    qry.addBindValue("%" + search + "%");
-    qry.addBindValue("%" + search + "%");
-    qry.addBindValue("%" + search + "%");
-    qry.addBindValue("%" + search + "%");
-    qry.exec();
-
-    while ( qry.next() ){
-        QString id(qry.value(0).toString());
-        QString name(qry.value(1).toString());
-        QString proj_name(qry.value(2).toString());
-        QString rev_no(qry.value(3).toString());
-        QString rev_date(qry.value(4).toString());
-        ui->listWidget_2->addItem(id % ". " % proj_name % " - Rev. " % rev_no % " - "  % name % " - " % rev_date.left(10));
+//Add item button
+void MainWindow::on_pushButton_4_clicked()
+{
+    QList<QListWidgetItem *> items_to_add = ui->listWidget->selectedItems();
+    for (int i = 0; i < items_to_add.size(); ++i) {
+        ui->listWidget_2->addItem(items_to_add.at(i)->text());
     }
+}
+
+//Double click item on left box (add)
+void MainWindow::on_listWidget_doubleClicked(const QModelIndex &index)
+{
+    QList<QListWidgetItem *> items_to_add = ui->listWidget->selectedItems();
+    for (int i = 0; i < items_to_add.size(); ++i) {
+        ui->listWidget_2->addItem(items_to_add.at(i)->text());
+    }
+}
+
+//Double click item on right box (remove)
+void MainWindow::on_listWidget_2_doubleClicked(const QModelIndex &index)
+{
+    qDeleteAll(ui->listWidget_2->selectedItems());
 }
