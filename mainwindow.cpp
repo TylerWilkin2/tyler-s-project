@@ -3,6 +3,7 @@
 #include <QSqlDatabase>
 #include <QSqlQuery>
 #include <QString>
+#include <QStringBuilder>
 #include <QMessageBox>
 #include <QDebug>
 #include <QSqlQueryModel>
@@ -13,10 +14,13 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
     QSqlDatabase db = QSqlDatabase::addDatabase( "QODBC" );
-    db.setDatabaseName("DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};DSN='';DBQ=C:/Users\\joseph\\Projects\\TylersProject-build-desktop-Qt_4_7_4_for_Desktop_-_MinGW_4_4__Qt_SDK__Debug\\debug\\windselect.accdb");
+    db.setDatabaseName("DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};DSN='';DBQ=C:/Users\\DefaultGen\\TylersProject-build-desktop-Qt_4_7_4_for_Desktop_-_MinGW_4_4__Qt_SDK__Debug\\debug\\windselect.accdb");
     if(db.open()==false){
-        QMessageBox::critical(0,"FUCK","FUCK");
+        QMessageBox::critical(0,"Nope","Your file isn't where I thought it would be.");
     }
+
+
+
     QStringList list = db.tables(QSql::Tables);
     for(int i=0;i<list.size(); ++i)
     {
@@ -24,13 +28,16 @@ MainWindow::MainWindow(QWidget *parent) :
     }
 
     QSqlQuery qryTableNames;
-    qryTableNames.exec("select ID from parentTable");
+    qryTableNames.exec("select * from parentTable");
     while ( qryTableNames.next() ){
-        ui->listWidget->addItem(QString(qryTableNames.value(0).toString()));
-        ui->listWidget_2->addItem(QString(qryTableNames.value(0).toString()));
+        QString id(qryTableNames.value(0).toString());
+        QString name(qryTableNames.value(1).toString());
+        QString proj_name(qryTableNames.value(2).toString());
+        QString rev_no(qryTableNames.value(3).toString());
+        QString rev_date(qryTableNames.value(4).toString());
+        ui->listWidget->addItem(id % ". " % proj_name % " - Rev. " % rev_no % " - "  % name % " - " % rev_date.left(10));
+        ui->listWidget_2->addItem(id % ". " % proj_name % " - Rev. " % rev_no % " - "  % name % " - " % rev_date.left(10));
     }
-
-
 
     // SELECT * FROM siteinfoMain WHERE siteInfoMain.parentTablefk =
 }
@@ -55,5 +62,36 @@ void MainWindow::on_pushButton_clicked()
     model->setQuery(qrySheet);
 
     this->ui->tableView->setModel(model);
+
+}
+
+void MainWindow::on_pushButton_2_clicked()
+{
+    QString search = ui->lineEdit->text();
+
+    ui->listWidget->clear();
+
+    QSqlQuery qry;
+    qry.prepare("SELECT * FROM parentTable WHERE ID like '%?%' OR uploaderName like '%?%' OR projectName like '%?%' OR revisionDate like '%?%' ");
+    qry.addBindValue(search);
+    qry.addBindValue(search);
+    qry.addBindValue(search);
+    qry.addBindValue(search);
+    qry.exec();
+
+    while ( qry.next() ){
+        QString id(qry.value(0).toString());
+        QString name(qry.value(1).toString());
+        QString proj_name(qry.value(2).toString());
+        QString rev_no(qry.value(3).toString());
+        QString rev_date(qry.value(4).toString());
+        ui->listWidget->addItem(id % ". " % proj_name % " - Rev. " % rev_no % " - "  % name % " - " % rev_date.left(10));
+    }
+
+
+}
+
+void MainWindow::on_pushButton_3_clicked()
+{
 
 }
