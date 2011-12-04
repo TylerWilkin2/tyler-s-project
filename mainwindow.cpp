@@ -50,8 +50,19 @@ MainWindow::~MainWindow()
 void MainWindow::on_pushButton_clicked()
 {
 
-    QSqlQuery qrySheet;
-    qrySheet.prepare("SELECT * FROM SiteInfoMain as foo WHERE foo.parentTableFK = ? UNION SELECT * FROM SiteInfoMain as foo WHERE foo.parentTableFK = ?");
+    QSqlQuery qrySheet1;
+    QSqlQuery qrySheet2;
+    qrySheet1.prepare("SELECT * FROM SiteInfoMain as foo WHERE foo.parentTableFK = ? UNION SELECT * FROM SiteInfoMain as foo WHERE foo.parentTableFK = ?");
+    qrySheet2.prepare("SELECT * FROM SiteInfoMain as foo WHERE foo.parentTableFK = ? UNION SELECT * FROM SiteInfoMain as foo WHERE foo.parentTableFK = ?");
+
+    QString n1 = ui->listWidget->currentItem()->text();
+    QString n2 = ui->listWidget_2->currentItem()->text();
+    QStringList list1;
+    QStringList list2;
+    list1 = n1.split(QRegExp("\ "));
+    list2 = n2.split(QRegExp("\ "));
+
+
     qrySheet.addBindValue(ui->listWidget->currentItem()->text());
     qrySheet.addBindValue(ui->listWidget_2->currentItem()->text());
 
@@ -70,13 +81,14 @@ void MainWindow::on_pushButton_2_clicked()
     QString search = ui->lineEdit->text();
 
     ui->listWidget->clear();
+    qDebug() << search;
 
     QSqlQuery qry;
-    qry.prepare("SELECT * FROM parentTable WHERE ID like '%?%' OR uploaderName like '%?%' OR projectName like '%?%' OR revisionDate like '%?%' ");
-    qry.addBindValue(search);
-    qry.addBindValue(search);
-    qry.addBindValue(search);
-    qry.addBindValue(search);
+    qry.prepare("SELECT * FROM parentTable WHERE ID LIKE ? OR uploaderName LIKE ? OR projectName LIKE ? OR revisionDate LIKE ? ");
+    qry.addBindValue("%" + search + "%");
+    qry.addBindValue("%" + search + "%");
+    qry.addBindValue("%" + search + "%");
+    qry.addBindValue("%" + search + "%");
     qry.exec();
 
     while ( qry.next() ){
@@ -93,5 +105,25 @@ void MainWindow::on_pushButton_2_clicked()
 
 void MainWindow::on_pushButton_3_clicked()
 {
+    QString search = ui->lineEdit_2->text();
 
+    ui->listWidget_2->clear();
+    qDebug() << search;
+
+    QSqlQuery qry;
+    qry.prepare("SELECT * FROM parentTable WHERE ID LIKE ? OR uploaderName LIKE ? OR projectName LIKE ? OR revisionDate LIKE ? ");
+    qry.addBindValue("%" + search + "%");
+    qry.addBindValue("%" + search + "%");
+    qry.addBindValue("%" + search + "%");
+    qry.addBindValue("%" + search + "%");
+    qry.exec();
+
+    while ( qry.next() ){
+        QString id(qry.value(0).toString());
+        QString name(qry.value(1).toString());
+        QString proj_name(qry.value(2).toString());
+        QString rev_no(qry.value(3).toString());
+        QString rev_date(qry.value(4).toString());
+        ui->listWidget_2->addItem(id % ". " % proj_name % " - Rev. " % rev_no % " - "  % name % " - " % rev_date.left(10));
+    }
 }
